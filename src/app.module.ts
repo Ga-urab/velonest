@@ -7,7 +7,7 @@ import { ContractorsModule } from './contractors/contractors.module';
 
 @Module({
   imports: [
-     MongooseModule.forRoot('mongodb+srv://gaurabaryal9:WTW3svj6bRzv5d8X@cluster0.bpzsgmk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'),
+MongooseModule.forRoot(process.env.MONGO_URI || ''),
     ConfigModule.forRoot(),
     ContractorsModule,
   ],
