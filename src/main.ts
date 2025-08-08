@@ -15,7 +15,7 @@ async function bootstrap() {
   // });
 
     app.enableCors({
-  origin: [  'https://www.velonepa.com.np',
+  origin: [ 'https://velonepa-sys.vercel.app', 'https://www.velonepa.com.np',
     'https://velonepa-e43j.vercel.app', ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
