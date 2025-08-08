@@ -1,0 +1,27 @@
+import { INestApplication } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ContractorsModule } from 'src/contractors/contractors.module';
+
+export const swaggerModuleConfig = (app: INestApplication) => {
+  // For Root Swagger Document
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Root API')
+    .setDescription('API For Admin Portal.')
+    .setVersion('1.0.0')
+    .addBearerAuth
+    // {
+    //   description: 'Default JWT Authorization',
+    //   type: 'http',
+    //   in: 'header',
+    //   scheme: 'bearer',
+    //   bearerFormat: 'JWT',
+    // },
+    // 'defaultBearerAuth',
+    ()
+    .build();
+
+  const rootApiDocument = SwaggerModule.createDocument(app, swaggerConfig, {
+    include: [ContractorsModule],
+  });
+  SwaggerModule.setup('api', app, rootApiDocument);
+};
