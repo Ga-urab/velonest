@@ -8,18 +8,18 @@ async function bootstrap() {
   swaggerModuleConfig(app);
 
   // Enable CORS to allow requests from frontend
-  // app.enableCors({
-  // origin: ['http://localhost:3000', 'http://192.168.1.87:3000'],
-  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  //   credentials: true,
-  // });
-
-    app.enableCors({
-  origin: [ 'https://velonepa-sys.vercel.app', 'https://www.velonepa.com.np',
-    'https://velonepa-e43j.vercel.app', ],
+  app.enableCors({
+  origin: ['http://localhost:3000', 'http://192.168.1.87:3000'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
+
+  //   app.enableCors({
+  // origin: [ 'https://velonepa-sys.vercel.app', 'https://www.velonepa.com.np',
+  //   'https://velonepa-e43j.vercel.app', ],
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   credentials: true,
+  // });
   await app.listen(process.env.PORT || 3001);
 }
 bootstrap();

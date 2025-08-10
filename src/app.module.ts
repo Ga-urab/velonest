@@ -6,11 +6,16 @@ import { ConfigModule } from '@nestjs/config';
 import { ContractorsModule } from './contractors/contractors.module';
 
 @Module({
-  imports: [
-MongooseModule.forRoot(process.env.MONGO_URI || ''),
-    ConfigModule.forRoot(),
-    ContractorsModule,
-  ],
+imports: [
+  ConfigModule.forRoot({ isGlobal: true }),
+  MongooseModule.forRootAsync({
+    useFactory: () => ({
+      uri: process.env.MONGO_URI,
+    }),
+  }),
+  ContractorsModule,
+],
+
   controllers: [AppController],
   providers: [AppService],
 })

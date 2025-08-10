@@ -162,45 +162,56 @@ async findAllFromDB(
   code: string,
   startDate?: string,
   endDate?: string,
+  stage?: string,
+  partnershipTerm?: string,   // NEW param
+  sortOrder: 'asc' | 'desc' = 'desc',
 ) {
   const skip = (page - 1) * limit;
-
   const query: any = {};
 
-  if (code !== 'admin') {
+  // Partnership Terms filter (frontend filter takes priority)
+  if (partnershipTerm && partnershipTerm.trim()) {
+    query.partnershipTerms = partnershipTerm.trim();
+  } else if (code !== 'admin') {
     query.partnershipTerms = code;
+  }
+
+  if (stage && stage.trim()) {
+    query.stage = stage.trim();
   }
 
   if (search?.trim()) {
     query.$or = [
       { fullName: { $regex: search, $options: 'i' } },
-      { phoneNumber: { $regex: search, $options: 'i' } }, // corrected from `phone` to `phoneNumber`
+      { phoneNumber: { $regex: search, $options: 'i' } },
     ];
   }
 
-  if (startDate || endDate) {
-    query.dateAdded = {};
-
-    if (startDate) {
-      // convert to Date object for query
-      query.dateAdded.$gte = new Date(startDate);
-    }
-    if (endDate) {
-      // To include entire endDate day, set time to 23:59:59
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      query.dateAdded.$lte = end;
-    }
+if (startDate || endDate) {
+  query.dateAdded = {};
+  if (startDate) {
+    query.dateAdded.$gte = startDate; // use string, not Date object
   }
+  if (endDate) {
+    query.dateAdded.$lte = endDate;   // use string, not Date object
+  }
+}
+
+
+  const sortObj: any = { dateAdded: sortOrder === 'asc' ? 1 : -1 };
 
   const [data, total] = await Promise.all([
-    this.contractorModel.find(query).skip(skip).limit(limit).exec(),
+    this.contractorModel
+      .find(query)
+      .sort(sortObj)
+      .skip(skip)
+      .limit(limit)
+      .exec(),
     this.contractorModel.countDocuments(query).exec(),
   ]);
 
   return { data, total };
 }
-
 
 
 

@@ -47,12 +47,28 @@ async getAllContractors(
   @Query('code') code: string,
   @Query('startDate') startDate?: string,
   @Query('endDate') endDate?: string,
+  @Query('stage') stage?: string,
+  @Query('partnershipTerm') partnershipTerm?: string,
+  @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc',
 ) {
   const pageNum = parseInt(page, 10);
   const limitNum = Math.min(parseInt(limit, 10), 100);
 
-  return this.contractorsService.findAllFromDB(pageNum, limitNum, search, code, startDate, endDate);
+  return this.contractorsService.findAllFromDB(
+    pageNum,
+    limitNum,
+    search,
+    code,
+    startDate,
+    endDate,
+    stage,
+    partnershipTerm,
+    sortOrder,
+  );
 }
+
+
+
 
 
 
