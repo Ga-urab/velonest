@@ -201,19 +201,19 @@ async findAll(
   sortOrder: 'asc' | 'desc' = 'desc',
 ): Promise<{ data: any[]; total: number }> {
   const skip = (page - 1) * limit;
-  const query: any = {};
+  const match: any = {};
 
   // Handle special search keywords for status filtering
   if (search && search.trim()) {
     const s = search.trim().toLowerCase();
     if (s === 'completed') {
-      query.status = /^completed$/i;  // case-insensitive exact match
+      match.status = /^completed$/i;  // case-insensitive exact match
     } else if (s === 'cancelled') {
-      query.status = /^cancelled$/i;
+      match.status = /^cancelled$/i;
     } else {
       // fallback: treat as normalSearch if not special keyword
       const regex = new RegExp(search.trim(), 'i');
-      query.$or = [
+      match.$or = [
         { driver: regex },
         { driver2: regex },
         { vehicle: regex },
@@ -224,7 +224,7 @@ async findAll(
   } else if (normalSearch && normalSearch.trim()) {
     // Normal free text search on multiple fields
     const regex = new RegExp(normalSearch.trim(), 'i');
-    query.$or = [
+    match.$or = [
       { driver: regex },
       { driver2: regex },
       { vehicle: regex },
@@ -233,47 +233,57 @@ async findAll(
     ];
   }
 
-// Date range filter on pickupDate
-if (startDate || endDate) {
-  query.pickupDate = {};
-
-  if (startDate && !isNaN(new Date(startDate).getTime())) {
-    query.pickupDate.$gte = new Date(startDate);
+  // Date range filter on pickupDate
+  if (startDate || endDate) {
+    match.pickupDate = {};
+    if (startDate && !isNaN(new Date(startDate).getTime())) {
+      match.pickupDate.$gte = new Date(startDate);
+    }
+    if (endDate && !isNaN(new Date(endDate).getTime())) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999); // include full day
+      match.pickupDate.$lte = end;
+    }
+    if (Object.keys(match.pickupDate).length === 0) {
+      delete match.pickupDate;
+    }
   }
 
-  if (endDate && !isNaN(new Date(endDate).getTime())) {
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // include full day
-    query.pickupDate.$lte = end;
-  }
+  // Build aggregation pipeline
+  const pipeline: any[] = [{ $match: match }];
 
-  // If pickupDate is empty object, remove it from query
-  if (Object.keys(query.pickupDate).length === 0) {
-    delete query.pickupDate;
-  }
-}
-
-
-  // Sorting: default to pickupDate desc if no sortField provided
-  const sortObj: any = {};
+  // Add field for numeric sort if needed
+  let sortStage: any = {};
   if (sortField && sortField.trim()) {
-    // Use the provided field and order
-    sortObj[sortField] = sortOrder === 'asc' ? 1 : -1;
+    if (sortField === 'cash' || sortField === 'fareInYangoPro' || sortField === 'mileageKm') {
+      // Cast to number for sorting
+      const numericField = sortField + 'Num';
+      pipeline.push({
+        $addFields: {
+          [numericField]: { $toDouble: `$${sortField}` }
+        }
+      });
+      sortStage[numericField] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      // Regular sort on field
+      sortStage[sortField] = sortOrder === 'asc' ? 1 : -1;
+    }
   } else {
-    // Default sort by pickupDate descending
-    sortObj['pickupDate'] = -1;
+    sortStage['pickupDate'] = -1;
   }
 
-  const [data, total] = await Promise.all([
-    this.rideReportModel.find(query).sort(sortObj).skip(skip).limit(limit).exec(),
-    this.rideReportModel.countDocuments(query).exec(),
-  ]);
+  pipeline.push({ $sort: sortStage });
+  pipeline.push({ $skip: skip });
+  pipeline.push({ $limit: limit });
+
+  // Run aggregation for data
+  const data = await this.rideReportModel.aggregate(pipeline).exec();
+
+  // Run countDocuments separately for total count
+  const total = await this.rideReportModel.countDocuments(match).exec();
 
   return { data, total };
 }
-
-
-
 
 
   async countAll(): Promise<{ total: number }> {
