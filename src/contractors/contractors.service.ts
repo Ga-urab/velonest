@@ -5,7 +5,7 @@ import csv from 'csv-parser';
 import { Readable } from 'stream';
 import { Contractor } from './entities/contractor.entity';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { AddRemarkDto } from './dto/add-remark.dto';
 
 
@@ -338,4 +338,77 @@ async findAllFromDB(
 
     return this.contractorModel.aggregate(pipeline);
   }
+
+// Controller or Service method (NestJS example)
+
+async getTopRemarkedContractors(limit: number, page: number) {
+    const skip = (page - 1) * limit;
+
+    const data = await this.contractorModel.aggregate([
+      {
+        $project: {
+          fullName: 1,
+          remarksCount: { $size: { $ifNull: ['$remarks', []] } },
+        },
+      },
+      { $sort: { remarksCount: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    return data;
+  }
+
+ async getRegistrationCount(page = 1, daysPerPage = 5) {
+    // Calculate date ranges for pagination
+    const today = new Date();
+    // Normalize today to end of the day for inclusive range
+    today.setHours(23, 59, 59, 999);
+
+    // End date for this page (newest date to include)
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() - (page - 1) * daysPerPage);
+
+    // Start date for this page (oldest date to include)
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - daysPerPage + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          dateAdded: {
+            $exists: true,
+            $ne: null,
+            $gte: startDate.toISOString(),
+            $lte: endDate.toISOString(),
+          },
+        },
+      },
+      {
+        $project: {
+          day: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: { $toDate: '$dateAdded' } as any,
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$day',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: -1 }, // newest day first
+      },
+    ];
+
+    const result = await this.contractorModel.aggregate(pipeline).exec();
+
+    return result;
+  }
+
 }

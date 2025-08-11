@@ -129,4 +129,31 @@ async deleteRemarkByIndex(
   async getRemarksSummary(@Query('groupBy') groupBy: string) {
     return this.contractorsService.getRemarksSummary(groupBy || 'remarker');
   }
+
+@Get('top-remarked-contractors')
+  async getTopRemarkedContractors(
+    @Query('limit') limitStr?: string,
+    @Query('page') pageStr?: string,
+  ) {
+    const limit = limitStr ? parseInt(limitStr, 10) : 5;
+    const page = pageStr ? parseInt(pageStr, 10) : 1;
+
+    // Sanity checks
+    if (limit < 1) throw new Error('Limit must be at least 1');
+    if (page < 1) throw new Error('Page must be at least 1');
+
+    const data = await this.contractorsService.getTopRemarkedContractors(limit, page);
+
+    return data; // return array directly or wrap as { data, total } if you add total count
+  }
+
+  @Get('registrations')
+  async getRegistrations(
+    @Query('page') page: string,
+  ) {
+    const pageNumber = parseInt(page) || 1;
+    const daysPerPage = 5;
+    return this.contractorsService.getRegistrationCount(pageNumber, daysPerPage);
+  }
+
 }
