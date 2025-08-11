@@ -163,13 +163,14 @@ async findAllFromDB(
   startDate?: string,
   endDate?: string,
   stage?: string,
-  partnershipTerm?: string,   // NEW param
+  partnershipTerm?: string, // NEW param
+  remarksFilter?: 'with' | 'without', // NEW param
   sortOrder: 'asc' | 'desc' = 'desc',
 ) {
   const skip = (page - 1) * limit;
   const query: any = {};
 
-  // Partnership Terms filter (frontend filter takes priority)
+  // Partnership Terms filter
   if (partnershipTerm && partnershipTerm.trim()) {
     query.partnershipTerms = partnershipTerm.trim();
   } else if (code !== 'admin') {
@@ -187,16 +188,21 @@ async findAllFromDB(
     ];
   }
 
-if (startDate || endDate) {
-  query.dateAdded = {};
-  if (startDate) {
-    query.dateAdded.$gte = startDate; // use string, not Date object
+  if (startDate || endDate) {
+    query.dateAdded = {};
+    if (startDate) query.dateAdded.$gte = startDate;
+    if (endDate) query.dateAdded.$lte = endDate;
   }
-  if (endDate) {
-    query.dateAdded.$lte = endDate;   // use string, not Date object
-  }
-}
 
+  // NEW: Remarks filter
+  if (remarksFilter === 'with') {
+    query.remarks = { $exists: true, $ne: [] }; // array exists & not empty
+  } else if (remarksFilter === 'without') {
+    query.$or = [
+      { remarks: { $exists: false } }, // no field at all
+      { remarks: { $size: 0 } }        // empty array
+    ];
+  }
 
   const sortObj: any = { dateAdded: sortOrder === 'asc' ? 1 : -1 };
 
@@ -212,6 +218,7 @@ if (startDate || endDate) {
 
   return { data, total };
 }
+
 
 
 

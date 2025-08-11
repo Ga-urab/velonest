@@ -49,6 +49,7 @@ async getAllContractors(
   @Query('endDate') endDate?: string,
   @Query('stage') stage?: string,
   @Query('partnershipTerm') partnershipTerm?: string,
+  @Query('remarksFilter') remarksFilter?: 'with' | 'without', // NEW
   @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc',
 ) {
   const pageNum = parseInt(page, 10);
@@ -63,9 +64,11 @@ async getAllContractors(
     endDate,
     stage,
     partnershipTerm,
+    remarksFilter, // pass to service
     sortOrder,
   );
 }
+
 
 
 

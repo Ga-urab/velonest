@@ -1,6 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ContractorsModule } from 'src/contractors/contractors.module';
+import { RideReportModule } from 'src/ridereport/ridereport.module';
+import { TransactionsModule } from 'src/transactions/transactions.module';
 
 export const swaggerModuleConfig = (app: INestApplication) => {
   // For Root Swagger Document
@@ -21,7 +23,7 @@ export const swaggerModuleConfig = (app: INestApplication) => {
     .build();
 
   const rootApiDocument = SwaggerModule.createDocument(app, swaggerConfig, {
-    include: [ContractorsModule],
+    include: [ContractorsModule, TransactionsModule, RideReportModule],
   });
   SwaggerModule.setup('api', app, rootApiDocument);
 };
