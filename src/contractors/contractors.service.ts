@@ -276,4 +276,66 @@ async findAllFromDB(
         .on('error', (err) => reject(err));
     });
   }
+
+
+
+
+
+
+
+
+
+
+  //charts
+   async getStageDistribution(): Promise<{ stage: string; count: number }[]> {
+    // Aggregation pipeline to group by 'stage' and count documents
+    const result = await this.contractorModel.aggregate([
+      {
+        $group: {
+          _id: '$stage',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          stage: '$_id',
+          count: 1,
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
+    ]);
+    return result;
+  }
+
+   async getRemarksSummary(groupBy: string) {
+    const pipeline: any[] = [
+      { $unwind: '$remarks' },
+    ];
+
+    if (groupBy === 'date') {
+      pipeline.push({
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$remarks.timestamp' }
+          },
+          count: { $sum: 1 }
+        }
+      });
+    } else {
+      // Default grouping by remarker
+      pipeline.push({
+        $group: {
+          _id: '$remarks.remarker',
+          count: { $sum: 1 }
+        }
+      });
+    }
+
+    pipeline.push({ $sort: { _id: 1 } });
+
+    return this.contractorModel.aggregate(pipeline);
+  }
 }

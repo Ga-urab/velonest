@@ -113,4 +113,20 @@ async deleteRemarkByIndex(
 }
 
 
+
+
+
+
+
+//charts
+@Get('stage-distribution')
+  async getStageDistribution() {
+    const data = await this.contractorsService.getStageDistribution();
+    return { data };
+  }
+
+   @Get('remarks-summary')
+  async getRemarksSummary(@Query('groupBy') groupBy: string) {
+    return this.contractorsService.getRemarksSummary(groupBy || 'remarker');
+  }
 }
