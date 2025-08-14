@@ -113,9 +113,9 @@ async deleteRemarkByIndex(
 }
 
 // contractor.controller.ts
-@Get('all-csv')
-async getAllForCSV(@Query('code') code: string) {
-  return this.contractorsService.findAllForCSV(code); // no pagination
+@Get('all-data')
+async findAllData() {
+  return this.contractorsService.findAllForCSV();
 }
 
 
