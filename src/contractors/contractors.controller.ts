@@ -112,6 +112,13 @@ async deleteRemarkByIndex(
   return this.contractorsService.deleteRemarkByIndex(contractorId, parseInt(index));
 }
 
+// contractor.controller.ts
+@Get('all-csv')
+async getAllForCSV(@Query('code') code: string) {
+  return this.contractorsService.findAllForCSV(code); // no pagination
+}
+
+
 
 
 

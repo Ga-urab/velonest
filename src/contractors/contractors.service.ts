@@ -410,5 +410,7 @@ async getTopRemarkedContractors(limit: number, page: number) {
 
     return result;
   }
-
+async findAllForCSV(code: string) {
+  return this.contractorModel.find({ code }).lean().exec();
+}
 }

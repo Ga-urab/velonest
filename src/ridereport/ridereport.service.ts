@@ -51,31 +51,145 @@ export class RideReportService {
     return isNaN(d.getTime()) ? null : d;
   }
 
-async uploadCSV(file: Express.Multer.File): Promise<any> {
-  if (!file || !file.buffer) {
-    throw new BadRequestException('File is required');
-  }
+// async uploadCSV(file: Express.Multer.File): Promise<any> {
+//   if (!file || !file.buffer) {
+//     throw new BadRequestException('File is required');
+//   }
 
-  const parsedResults: any[] = [];
+//   const parsedResults: any[] = [];
 
-  // Helper: format Date object as "DD.MM.YYYY HH:mm:ss"
-  function formatNepalDate(date) {
-    if (!date) return null;
-    const pad = (n) => n.toString().padStart(2, '0');
+//   // Helper: format Date object as "DD.MM.YYYY HH:mm:ss"
+//   function formatNepalDate(date) {
+//     if (!date) return null;
+//     const pad = (n) => n.toString().padStart(2, '0');
 
-    const day = pad(date.getDate());
-    const month = pad(date.getMonth() + 1);
-    const year = date.getFullYear();
+//     const day = pad(date.getDate());
+//     const month = pad(date.getMonth() + 1);
+//     const year = date.getFullYear();
 
-    const hours = pad(date.getHours());
-    const minutes = pad(date.getMinutes());
-    const seconds = pad(date.getSeconds());
+//     const hours = pad(date.getHours());
+//     const minutes = pad(date.getMinutes());
+//     const seconds = pad(date.getSeconds());
 
-    return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
-  }
+//     return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+//   }
 
-  // Parse "DD.MM.YYYY HH:mm:ss" string to Date object (direct local date, no timezone offset)
-  function parseDateExact(dateTimeStr: string): Date | null {
+//   // Parse "DD.MM.YYYY HH:mm:ss" string to Date object (direct local date, no timezone offset)
+//   function parseDateExact(dateTimeStr: string): Date | null {
+//     if (!dateTimeStr) return null;
+//     const [datePart, timePart] = dateTimeStr.split(' ');
+//     if (!datePart) return null;
+//     const [day, month, year] = datePart.split('.').map(Number);
+//     const [hours = 0, minutes = 0, seconds = 0] = timePart ? timePart.split(':').map(Number) : [];
+
+//     if ([day, month, year, hours, minutes, seconds].some(isNaN)) return null;
+
+//     // Direct construction with no timezone adjustment:
+//     return new Date(year, month - 1, day, hours, minutes, seconds);
+//   }
+
+//   // Helper: convert comma decimals to dots and parse number
+//   const parseCSVNumber = (val: any) => {
+//     if (!val) return null;
+//     const normalized = String(val).replace(',', '.').trim();
+//     const num = Number(normalized);
+//     return isNaN(num) ? null : num;
+//   };
+
+//   // Mileage: parse number and divide by 1000
+//   const parseMileage = (val: any) => {
+//     const num = parseCSVNumber(val);
+//     return num !== null ? num / 1000 : null;
+//   };
+
+//   // Prices: parse normally with decimal fix, no division
+//   const parsePrice = (val: any) => parseCSVNumber(val);
+
+//   return new Promise((resolve, reject) => {
+//     const cleanBuffer = stripBOM(file.buffer);
+//     const stream = Readable.from(cleanBuffer);
+
+//     stream
+//       .pipe(csv({ separator: ';' }))
+//       .on('data', (row) => {
+//         try {
+//           const mileageRaw = row['Mileage, km'] ?? row['Mileage km'];
+//           const mileageKm = parseMileage(mileageRaw);
+
+//           const pickupDateObj = parseDateExact(row['Pickup date']);
+//           const completionDateObj = parseDateExact(row['Completion date']);
+
+//           parsedResults.push({
+//             id: row['ID'] ?? row['Id'] ?? row['id'],
+//             status: row['Status'],
+//             orderCode: row['Order code'] ?? row['Order Code'] ?? row['OrderCode'],
+//       driver: row['Driver'],    
+// driver2: row['Driver_1'], 
+// vehicle: row['Vehicle'],
+// vehicle2: row['Vehicle_1'],
+//             pickupDate: pickupDateObj,
+//             pickupDateFormatted: formatNepalDate(pickupDateObj),
+//             completionDate: completionDateObj,
+//             completionDateFormatted: formatNepalDate(completionDateObj),
+//             cancellationReason: row['Cancellation reason'],
+//             address: row['Address'],
+//             serviceClass: row['Service class'],
+
+//             mileageKm,
+
+//             fareInYangoPro: parsePrice(row['Fare in Yango Pro']),
+//             cash: parsePrice(row['Cash']),
+//             card: parsePrice(row['Card']),
+//             corporatePayment: parsePrice(row['Corporate payment']),
+//             tip: parsePrice(row['Tip']),
+//             promotion: parsePrice(row['Promotion']),
+//             bonuses: parsePrice(row['Bonuses']),
+//             serviceFee: parsePrice(row['Service fee']),
+//             partnerFee: parsePrice(row['Partner fee']),
+//             otherPayments: parsePrice(row['Other payments']),
+//             partnerRidePayments: row['Partner ride payments'],
+//           });
+//         } catch {
+//           // skip malformed rows silently
+//         }
+//       })
+//       .on('end', async () => {
+//         try {
+//           const orQueries = parsedResults.map(r => ({
+//             orderCode: r.orderCode,
+//             pickupDate: r.pickupDate ?? null,
+//           }));
+
+//           const existing = orQueries.length > 0
+//             ? await this.rideReportModel.find({ $or: orQueries }).lean().exec()
+//             : [];
+
+//           const existingKeys = new Set(
+//             existing.map(e => `${e.orderCode}|${e.pickupDate ? new Date(e.pickupDate).toISOString() : ''}`)
+//           );
+
+//           const newDocs = parsedResults.filter(r => {
+//             const key = `${r.orderCode}|${r.pickupDate ? r.pickupDate.toISOString() : ''}`;
+//             return !existingKeys.has(key);
+//           });
+
+//           if (newDocs.length > 0) {
+//             await this.rideReportModel.insertMany(newDocs);
+//           }
+
+//           resolve({
+//             message: 'CSV processed successfully',
+//             inserted: newDocs.length,
+//             skippedDuplicates: parsedResults.length - newDocs.length,
+//           });
+//         } catch (error) {
+//           reject({ message: 'Error processing CSV data', error });
+//         }
+//       })
+//       .on('error', (err) => reject(err));
+//   });
+// }
+  private parseDateExact(dateTimeStr: string): Date | null {
     if (!dateTimeStr) return null;
     const [datePart, timePart] = dateTimeStr.split(' ');
     if (!datePart) return null;
@@ -83,112 +197,117 @@ async uploadCSV(file: Express.Multer.File): Promise<any> {
     const [hours = 0, minutes = 0, seconds = 0] = timePart ? timePart.split(':').map(Number) : [];
 
     if ([day, month, year, hours, minutes, seconds].some(isNaN)) return null;
-
-    // Direct construction with no timezone adjustment:
     return new Date(year, month - 1, day, hours, minutes, seconds);
   }
 
-  // Helper: convert comma decimals to dots and parse number
-  const parseCSVNumber = (val: any) => {
+  private parseCSVNumber(val: any) {
     if (!val) return null;
     const normalized = String(val).replace(',', '.').trim();
     const num = Number(normalized);
     return isNaN(num) ? null : num;
-  };
+  }
 
-  // Mileage: parse number and divide by 1000
-  const parseMileage = (val: any) => {
-    const num = parseCSVNumber(val);
+  private parseMileage(val: any) {
+    const num = this.parseCSVNumber(val);
     return num !== null ? num / 1000 : null;
-  };
+  }
 
-  // Prices: parse normally with decimal fix, no division
-  const parsePrice = (val: any) => parseCSVNumber(val);
+  async uploadCSV(file: Express.Multer.File): Promise<any> {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('File is required');
+    }
 
-  return new Promise((resolve, reject) => {
+    const parsedResults: any[] = [];
+
     const cleanBuffer = stripBOM(file.buffer);
     const stream = Readable.from(cleanBuffer);
 
-    stream
-      .pipe(csv({ separator: ';' }))
-      .on('data', (row) => {
-        try {
-          const mileageRaw = row['Mileage, km'] ?? row['Mileage km'];
-          const mileageKm = parseMileage(mileageRaw);
+    return new Promise((resolve, reject) => {
+      stream
+        .pipe(csv({
+          separator: ';',
+          mapHeaders: ({ header, index }) => {
+            // rename duplicate headers:
+            if (header === 'Driver' && index === 3) return 'Driver';
+            if (header === 'Driver' && index === 4) return 'Driver2';
+            if (header === 'Vehicle' && index === 5) return 'Vehicle';
+            if (header === 'Vehicle' && index === 6) return 'Vehicle2';
+            return header.trim();
+          },
+        }))
+        .on('data', (row) => {
+          try {
+            parsedResults.push({
+              id: row['ID'] ?? row['Id'] ?? row['id'],
+              status: row['Status'],
+              orderCode: row['Order code'] ?? row['Order Code'] ?? row['OrderCode'],
 
-          const pickupDateObj = parseDateExact(row['Pickup date']);
-          const completionDateObj = parseDateExact(row['Completion date']);
+              driver: row['Driver'],
+              driver2: row['Driver2'],
 
-          parsedResults.push({
-            id: row['ID'] ?? row['Id'] ?? row['id'],
-            status: row['Status'],
-            orderCode: row['Order code'] ?? row['Order Code'] ?? row['OrderCode'],
-            driver: row['Driver'],
-            driver2: row['Driver'],
-            vehicle: row['Vehicle'],
-            vehicle2: row['Vehicle'],
-            pickupDate: pickupDateObj,
-            pickupDateFormatted: formatNepalDate(pickupDateObj),
-            completionDate: completionDateObj,
-            completionDateFormatted: formatNepalDate(completionDateObj),
-            cancellationReason: row['Cancellation reason'],
-            address: row['Address'],
-            serviceClass: row['Service class'],
+              vehicle: row['Vehicle'],
+              vehicle2: row['Vehicle2'],
 
-            mileageKm,
+              pickupDate: this.parseDateExact(row['Pickup date']),
+              completionDate: this.parseDateExact(row['Completion date']),
+              cancellationReason: row['Cancellation reason'],
+              address: row['Address'],
+              serviceClass: row['Service class'],
 
-            fareInYangoPro: parsePrice(row['Fare in Yango Pro']),
-            cash: parsePrice(row['Cash']),
-            card: parsePrice(row['Card']),
-            corporatePayment: parsePrice(row['Corporate payment']),
-            tip: parsePrice(row['Tip']),
-            promotion: parsePrice(row['Promotion']),
-            bonuses: parsePrice(row['Bonuses']),
-            serviceFee: parsePrice(row['Service fee']),
-            partnerFee: parsePrice(row['Partner fee']),
-            otherPayments: parsePrice(row['Other payments']),
-            partnerRidePayments: row['Partner ride payments'],
-          });
-        } catch {
-          // skip malformed rows silently
-        }
-      })
-      .on('end', async () => {
-        try {
-          const orQueries = parsedResults.map(r => ({
-            orderCode: r.orderCode,
-            pickupDate: r.pickupDate ?? null,
-          }));
+              mileageKm: this.parseMileage(row['Mileage, km'] ?? row['Mileage km']),
 
-          const existing = orQueries.length > 0
-            ? await this.rideReportModel.find({ $or: orQueries }).lean().exec()
-            : [];
-
-          const existingKeys = new Set(
-            existing.map(e => `${e.orderCode}|${e.pickupDate ? new Date(e.pickupDate).toISOString() : ''}`)
-          );
-
-          const newDocs = parsedResults.filter(r => {
-            const key = `${r.orderCode}|${r.pickupDate ? r.pickupDate.toISOString() : ''}`;
-            return !existingKeys.has(key);
-          });
-
-          if (newDocs.length > 0) {
-            await this.rideReportModel.insertMany(newDocs);
+              fareInYangoPro: this.parseCSVNumber(row['Fare in Yango Pro']),
+              cash: this.parseCSVNumber(row['Cash']),
+              card: this.parseCSVNumber(row['Card']),
+              corporatePayment: this.parseCSVNumber(row['Corporate payment']),
+              tip: this.parseCSVNumber(row['Tip']),
+              promotion: this.parseCSVNumber(row['Promotion']),
+              bonuses: this.parseCSVNumber(row['Bonuses']),
+              serviceFee: this.parseCSVNumber(row['Service fee']),
+              partnerFee: this.parseCSVNumber(row['Partner fee']),
+              otherPayments: this.parseCSVNumber(row['Other payments']),
+              partnerRidePayments: row['Partner ride payments'],
+            });
+          } catch {
+            // skip malformed rows silently
           }
+        })
+        .on('end', async () => {
+          try {
+            const orQueries = parsedResults.map(r => ({
+              orderCode: r.orderCode,
+              pickupDate: r.pickupDate ?? null,
+            }));
 
-          resolve({
-            message: 'CSV processed successfully',
-            inserted: newDocs.length,
-            skippedDuplicates: parsedResults.length - newDocs.length,
-          });
-        } catch (error) {
-          reject({ message: 'Error processing CSV data', error });
-        }
-      })
-      .on('error', (err) => reject(err));
-  });
-}
+            const existing = orQueries.length > 0
+              ? await this.rideReportModel.find({ $or: orQueries }).lean().exec()
+              : [];
+
+            const existingKeys = new Set(
+              existing.map(e => `${e.orderCode}|${e.pickupDate ? new Date(e.pickupDate).toISOString() : ''}`)
+            );
+
+            const newDocs = parsedResults.filter(r => {
+              const key = `${r.orderCode}|${r.pickupDate ? r.pickupDate.toISOString() : ''}`;
+              return !existingKeys.has(key);
+            });
+
+            if (newDocs.length > 0) {
+              await this.rideReportModel.insertMany(newDocs);
+            }
+
+            resolve({
+              message: 'CSV processed successfully',
+              inserted: newDocs.length,
+              skippedDuplicates: parsedResults.length - newDocs.length,
+            });
+          } catch (error) {
+            reject({ message: 'Error processing CSV data', error });
+          }
+        })
+        .on('error', (err) => reject(err));
+    });
+  }
 
 async findAll(
   page: number,
