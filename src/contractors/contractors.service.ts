@@ -173,7 +173,7 @@ async findAllFromDB(
   // Partnership Terms filter
   if (partnershipTerm && partnershipTerm.trim()) {
     query.partnershipTerms = partnershipTerm.trim();
-  } else if (code !== 'admin') {
+  } else if (code !== 'admin' && code !== 'customerService'){
     query.partnershipTerms = code;
   }
 
