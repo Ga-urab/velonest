@@ -3,7 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ContractorsModule } from 'src/contractors/contractors.module';
 import { RideReportModule } from 'src/ridereport/ridereport.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
-
+import { ActContractorsModule } from 'src/act-contractors/act-contractors.module';
 export const swaggerModuleConfig = (app: INestApplication) => {
   // For Root Swagger Document
   const swaggerConfig = new DocumentBuilder()
@@ -23,7 +23,7 @@ export const swaggerModuleConfig = (app: INestApplication) => {
     .build();
 
   const rootApiDocument = SwaggerModule.createDocument(app, swaggerConfig, {
-    include: [ContractorsModule, TransactionsModule, RideReportModule],
+    include: [ContractorsModule, TransactionsModule, RideReportModule, ActContractorsModule],
   });
   SwaggerModule.setup('api', app, rootApiDocument);
 };

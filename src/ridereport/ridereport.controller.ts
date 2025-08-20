@@ -2,6 +2,7 @@
 import {
   Controller,
   Post,
+  UploadedFiles,
   UploadedFile,
   UseInterceptors,
   Get,
@@ -10,6 +11,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RideReportService } from './ridereport.service';
 import { ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import csv from 'csv-parser';
+import * as fs from 'fs';
 
 @Controller('ridereport')
 export class RideReportController {
@@ -61,4 +65,83 @@ async getAll(
   async getCount() {
     return this.rideReportService.countAll();
   }
+
+
+
+
+@Get('check-completed')
+  async checkCompleted(@Query('contractorId') contractorId: string) {
+    return this.rideReportService.checkCompletedRides(contractorId);
+  }
+
+  // ride-reports.controller.ts
+@Get("campaign-leaderboard")
+async getLeaderboard() {
+  const start = new Date("2025-08-01T13:00:00Z");
+  const end = new Date("2025-08-25T13:00:00Z");
+  return this.rideReportService.getCampaignLeaderboard(start, end);
+}
+
+@Post('leaderboard-upload')
+@ApiConsumes('multipart/form-data')
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      champions: {
+        type: 'string',
+        format: 'binary',
+      },
+      igniters: {
+        type: 'string',
+        format: 'binary',
+      },
+    },
+  },
+})
+@UseInterceptors(
+  FileFieldsInterceptor([
+    { name: 'champions', maxCount: 1 },
+    { name: 'igniters', maxCount: 1 },
+  ]),
+)
+async uploadLeaderboard(@UploadedFiles() files: { champions?: Express.Multer.File[]; igniters?: Express.Multer.File[] }) {
+  if (!files.champions || !files.igniters) {
+    throw new Error('Both champions and igniters CSV files are required');
+  }
+
+  const start = new Date("2025-08-01T13:00:00Z");
+  const end = new Date("2025-08-25T13:00:00Z");
+
+  const championsCSV = files.champions[0].path;
+  const ignitersCSV = files.igniters[0].path;
+
+const champions = await this.parseCSV(files.champions[0]);
+const igniters = await this.parseCSV(files.igniters[0]);
+
+
+  return this.rideReportService.getLeaderboardFromCSV(champions, igniters, start, end);
+}
+
+private parseCSV(file: Express.Multer.File): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const results: string[] = [];
+    const stream = require('stream');
+    const readable = new stream.Readable();
+    readable._read = () => {}; // _read is required
+    readable.push(file.buffer);
+    readable.push(null);
+
+    readable
+      .pipe(csv({ headers: false }))
+      .on('data', (data: Record<string, string>) => {
+        const val = Object.values(data)[0].trim();
+        if (val.toLowerCase() !== 'champions' && val.toLowerCase() !== 'igniters') results.push(val);
+      })
+      .on('end', () => resolve(results))
+      .on('error', reject);
+  });
+}
+
+
 }

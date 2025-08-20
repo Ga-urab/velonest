@@ -1,0 +1,41 @@
+import { Schema } from 'mongoose';
+
+export const ActContractorSchema = new Schema({
+  leadId: String,
+  contractorId: { type: String, unique: true, index: true },
+  fullName: String,
+  status: String,
+  codeName: String,
+  phoneNumber: String,
+  balance: String,
+  limit: String,
+  partnershipTerms: String,
+  driversLicense: String,
+  vehicle: String,
+  vehicleLicensePlateNumber: String,
+  payoutRules: String,
+  dateOfLastTrip: String,
+  hireType: String,
+  startDate: String,
+  comment: String,
+  profession: String,
+  rating: String,
+  priority: String,
+  source: String,
+  task: String,
+  managerInCharge: String,
+  nextInteractionDate: String,
+  city: String,
+  completedTrips: String,
+  details: String,
+  remarks: {
+    type: [
+      {
+        text: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        remarker: { type: String, required: true },
+      },
+    ],
+    default: [],
+  },
+});

@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ContractorsModule } from './contractors/contractors.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { RideReportModule } from './ridereport/ridereport.module';
+import { ActContractorsModule } from './act-contractors/act-contractors.module';
 
 @Module({
 imports: [
@@ -18,6 +19,7 @@ imports: [
   ContractorsModule,
   TransactionsModule,
   RideReportModule,
+  ActContractorsModule,
 ],
 
   controllers: [AppController],

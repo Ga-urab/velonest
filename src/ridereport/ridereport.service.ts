@@ -409,4 +409,162 @@ async findAll(
     const total = await this.rideReportModel.countDocuments();
     return { total };
   }
+
+  // ride-reports.service.ts
+
+
+
+
+async checkCompletedRides(contractorId: string) {
+    // Look for completed rides where contractor was driver or driver2
+    const count = await this.rideReportModel.countDocuments({
+      status: 'Completed',
+      $or: [{ driver: contractorId }, { driver2: contractorId }],
+    });
+
+    return {
+      contractorId,
+      hasCompletedRides: count > 0,
+      completedRides: count,
+    };
+  }
+
+  // ride-reports.service.ts
+async getCampaignLeaderboard(start: Date, end: Date) {
+  const rides = await this.rideReportModel.find({
+    pickupDate: { $ne: null } // skip invalid dates
+  }).exec();
+
+  // Group by driver
+  type DriverStats = {
+    completed: number;
+    declined: number;
+    total: number;
+    firstActivity: Date | null;
+    driverName: string;
+  };
+
+  const stats: Record<string, DriverStats> = {};
+
+  rides.forEach((ride) => {
+    const driver = ride.driver;
+    const driverName = ride.driver2 || '';
+    const pickup = new Date(ride.pickupDate);
+    if (isNaN(pickup.valueOf())) return;
+
+    if (!stats[driver]) {
+      stats[driver] = { completed: 0, declined: 0, total: 0, firstActivity: pickup, driverName };
+    }
+
+    stats[driver].total++;
+    stats[driver].driverName = driverName;
+
+    if (!stats[driver].firstActivity || pickup < stats[driver].firstActivity) {
+      stats[driver].firstActivity = pickup;
+    }
+
+    if (ride.status === "Completed") stats[driver].completed++;
+    if (ride.status === "Cancelled" && ride.cancellationReason === "Driver declined ride request") {
+      stats[driver].declined++;
+    }
+  });
+type DriverStatsWithId = DriverStats & { driver: string };
+
+  // Helper to calculate leaderboard
+  
+const buildLeaderboard = (drivers: DriverStatsWithId[]) => {
+  const results = drivers.map((s) => {
+    const acceptanceRate =
+      s.total > 0 ? (1 - s.declined / s.total) * 100 : 0;
+
+    return {
+      driver: s.driver,
+      driver2: s.driverName,
+      completed: s.completed,
+      acceptanceRate,
+    };
+  });
+
+    const maxCompleted = Math.max(...results.map(r => r.completed), 1);
+    const maxAcceptance = Math.max(...results.map(r => r.acceptanceRate), 1);
+
+    return results
+      .map(r => ({
+        ...r,
+        score: (r.completed / maxCompleted) * 70 + (r.acceptanceRate / maxAcceptance) * 30
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+  };
+
+  // Split champions & igniters
+  const championsDrivers = Object.entries(stats)
+    .filter(([_, s]) => s.firstActivity! < start)
+    .map(([driver, s]) => ({ ...s, driver }));
+
+  const ignitersDrivers = Object.entries(stats)
+    .filter(([_, s]) => s.firstActivity! >= start && s.firstActivity! <= end)
+    .map(([driver, s]) => ({ ...s, driver }));
+
+  return {
+    champions: buildLeaderboard(championsDrivers),
+    igniters: buildLeaderboard(ignitersDrivers),
+  };
+}
+
+
+async getLeaderboardFromCSV(champions: string[], igniters: string[], start: Date, end: Date) {
+  const rides = await this.rideReportModel.find({
+    pickupDate: { $ne: null }
+  }).exec();
+
+  type DriverStats = {
+    completed: number;
+    declined: number;
+    total: number;
+    driverName: string;
+  };
+
+  const stats: Record<string, DriverStats> = {};
+
+  rides.forEach((ride) => {
+    const driver = ride.driver;
+    const driverName = ride.driver2 || '';
+    const pickup = new Date(ride.pickupDate);
+    if (isNaN(pickup.valueOf()) || pickup < start || pickup > end) return;
+
+    if (!stats[driver]) stats[driver] = { completed: 0, declined: 0, total: 0, driverName };
+
+    stats[driver].total++;
+    stats[driver].driverName = driverName;
+
+    if (ride.status === "Completed") stats[driver].completed++;
+    if (ride.status === "Cancelled" && ride.cancellationReason === "Driver declined ride request") stats[driver].declined++;
+  });
+
+  const buildLeaderboard = (driverIds: string[]) => {
+    const results = driverIds
+      .filter(id => stats[id])
+      .map(id => {
+        const s = stats[id];
+        const acceptanceRate = s.total > 0 ? (1 - s.declined / s.total) * 100 : 0;
+        return { driver: id, driver2: s.driverName, completed: s.completed, acceptanceRate };
+      });
+
+    const maxCompleted = Math.max(...results.map(r => r.completed), 1);
+    const maxAcceptance = Math.max(...results.map(r => r.acceptanceRate), 1);
+
+    return results
+      .map(r => ({ ...r, score: (r.completed / maxCompleted) * 70 + (r.acceptanceRate / maxAcceptance) * 30 }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+  };
+
+  return {
+    champions: buildLeaderboard(champions),
+    igniters: buildLeaderboard(igniters),
+  };
+}
+
+
 }

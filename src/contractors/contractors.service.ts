@@ -11,6 +11,9 @@ import { AddRemarkDto } from './dto/add-remark.dto';
 
 @Injectable()
 export class ContractorsService {
+    updateMany(arg0: { contractorId: { $in: string[]; }; stage: { $ne: string; }; }, arg1: { $set: { stage: string; }; }) {
+        throw new Error('Method not implemented.');
+    }
     constructor(
     @InjectModel(Contractor.name)
     private contractorModel: Model<Contractor>,
@@ -126,6 +129,18 @@ async addRemark(contractorId: string, dto: AddRemarkDto) {
 
 //   return { message: 'Remark deleted', remarks: contractor.remarks };
 // }
+async bulkMarkConverted(actContractorModel: Model<any>) {
+  const activeIds = await actContractorModel.find({}, { contractorId: 1 }).lean();
+  const activeIdList = activeIds.map(c => c.contractorId);
+
+  const result = await this.contractorModel.updateMany(
+    { contractorId: { $in: activeIdList }, stage: { $ne: 'converted' } },
+    { $set: { stage: 'converted' } },
+  );
+
+  return result;
+}
+
 
 async deleteRemarkByIndex(contractorId: string, index: number) {
   const contractor = await this.contractorModel.findOne({ contractorId });

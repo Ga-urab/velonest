@@ -50,5 +50,6 @@ remarks: {
   ],
   controllers: [ContractorsController],
   providers: [ContractorsService],
+   exports: [ContractorsService],
 })
 export class ContractorsModule {}
