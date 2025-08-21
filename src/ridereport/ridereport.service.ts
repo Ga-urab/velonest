@@ -11,6 +11,23 @@ function stripBOM(buffer: Buffer): Buffer {
   return buffer.slice(0, 3).equals(bom) ? buffer.slice(3) : buffer;
 }
 
+export type RideReportDocument = {
+  _id: any;
+  driver: string;
+  driver2?: string;
+  status: string; 
+  cancellationReason?: string; 
+  pickupDate: Date | null;
+};
+
+export type LeaderboardRow = {
+  driver: string;
+  driver2: string;
+  completed: number;
+  acceptanceRate: number; 
+  score: number;         
+};
+
 @Injectable()
 export class RideReportService {
   constructor(
