@@ -188,14 +188,29 @@ async findAllFromDB(
   // Partnership Terms filter
   if (partnershipTerm && partnershipTerm.trim()) {
     query.partnershipTerms = partnershipTerm.trim();
-  } else if (code !== 'admin' && code !== 'customerService'){
+  } else if (code !== 'admin' && code !== 'customerService') {
     query.partnershipTerms = code;
   }
 
+  // Stage filter
   if (stage && stage.trim()) {
     query.stage = stage.trim();
   }
 
+  // 🚨 Restrict "converted" stage for everyone except admin
+  if (code !== 'admin') {
+    if (query.stage) {
+      // If a stage is already requested, make sure it's not "converted"
+      if (query.stage === 'converted') {
+        query.stage = { $ne: 'converted' };
+      }
+    } else {
+      // If no stage filter provided, exclude "converted"
+      query.stage = { $ne: 'converted' };
+    }
+  }
+
+  // Search filter
   if (search?.trim()) {
     query.$or = [
       { fullName: { $regex: search, $options: 'i' } },
@@ -203,19 +218,20 @@ async findAllFromDB(
     ];
   }
 
+  // Date filter
   if (startDate || endDate) {
     query.dateAdded = {};
     if (startDate) query.dateAdded.$gte = startDate;
     if (endDate) query.dateAdded.$lte = endDate;
   }
 
-  // NEW: Remarks filter
+  // Remarks filter
   if (remarksFilter === 'with') {
-    query.remarks = { $exists: true, $ne: [] }; // array exists & not empty
+    query.remarks = { $exists: true, $ne: [] };
   } else if (remarksFilter === 'without') {
     query.$or = [
-      { remarks: { $exists: false } }, // no field at all
-      { remarks: { $size: 0 } }        // empty array
+      { remarks: { $exists: false } },
+      { remarks: { $size: 0 } },
     ];
   }
 
@@ -233,6 +249,7 @@ async findAllFromDB(
 
   return { data, total };
 }
+
 
 
 
