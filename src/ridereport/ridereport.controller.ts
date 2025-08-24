@@ -78,7 +78,7 @@ async getAll(
 @Get("campaign-leaderboard")
 async getLeaderboard() {
   const start = new Date("2025-08-17T13:00:00Z");
-  const end = new Date("2025-08-22T13:00:00Z");
+  const end = new Date("2025-08-22T23:59:59Z");
   return this.rideReportService.getCampaignLeaderboard(start, end);
 }
 
@@ -111,7 +111,7 @@ async uploadLeaderboard(@UploadedFiles() files: { champions?: Express.Multer.Fil
   }
 
   const start = new Date("2025-08-17T13:00:00Z");
-  const end = new Date("2025-08-22T13:00:00Z");
+  const end = new Date("2025-08-22T23:59:59Z");
 
   const championsCSV = files.champions[0].path;
   const ignitersCSV = files.igniters[0].path;

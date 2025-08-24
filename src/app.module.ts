@@ -7,6 +7,7 @@ import { ContractorsModule } from './contractors/contractors.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { RideReportModule } from './ridereport/ridereport.module';
 import { ActContractorsModule } from './act-contractors/act-contractors.module';
+import { RecruitmentModule } from './recruitment/reqruitment.module';
 
 @Module({
 imports: [
@@ -20,6 +21,7 @@ imports: [
   TransactionsModule,
   RideReportModule,
   ActContractorsModule,
+  RecruitmentModule
 ],
 
   controllers: [AppController],
