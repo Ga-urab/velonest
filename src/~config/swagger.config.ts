@@ -5,6 +5,8 @@ import { RideReportModule } from 'src/ridereport/ridereport.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { ActContractorsModule } from 'src/act-contractors/act-contractors.module';
 import { RecruitmentModule } from 'src/recruitment/reqruitment.module';
+import { AttendanceModule } from 'src/attendance/attendance.module';
+
 export const swaggerModuleConfig = (app: INestApplication) => {
   // For Root Swagger Document
   const swaggerConfig = new DocumentBuilder()
@@ -24,7 +26,7 @@ export const swaggerModuleConfig = (app: INestApplication) => {
     .build();
 
   const rootApiDocument = SwaggerModule.createDocument(app, swaggerConfig, {
-    include: [ContractorsModule, TransactionsModule, RideReportModule, ActContractorsModule, RecruitmentModule],
+    include: [ContractorsModule, TransactionsModule, RideReportModule, ActContractorsModule, RecruitmentModule, AttendanceModule],
   });
   SwaggerModule.setup('api', app, rootApiDocument);
 };

@@ -2,7 +2,6 @@
 import { Schema } from 'mongoose';
 
 export const DriverSchema = new Schema({
-  driverId: { type: String, unique: true, index: true },
   fullName: String,
   phoneNumber: { type: String, index: true },
   workshop: { type: Schema.Types.ObjectId, ref: 'Workshop', index: true },

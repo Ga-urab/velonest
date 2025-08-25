@@ -52,7 +52,6 @@ export class RecruitmentService {
     if (!workshop) throw new NotFoundException('Workshop not found');
 
     const driver = new this.driverModel({
-      driverId: dto.driverId,
       fullName: dto.fullName,
       phoneNumber: dto.phoneNumber,
       workshop: workshop._id,
@@ -81,7 +80,6 @@ export class RecruitmentService {
   if (!workshop) throw new NotFoundException('Workshop not found');
 
   const driver = new this.driverModel({
-    driverId: `${Date.now()}`, // auto-generate
     fullName: dto.fullName,
     phoneNumber: dto.phoneNumber,
     workshop: workshop._id,
@@ -99,6 +97,71 @@ async getWorkshopById(workshopId: string) {
   const workshop = await this.workshopModel.findOne({ workshopId });
   if (!workshop) throw new NotFoundException('Workshop not found');
   return workshop;
+}
+
+// --- READ ---
+async getAllScouts() {
+  return this.scoutModel.find().populate('workshops').exec();
+}
+
+async getAllDrivers() {
+  return this.driverModel.find().populate('workshop').exec();
+}
+
+async getAllWorkshops() {
+  return this.workshopModel.find().populate('scout').populate('drivers').exec();
+}
+
+async getScoutById(scoutId: string) {
+  const scout = await this.scoutModel.findOne({ scoutId }).populate('workshops');
+  if (!scout) throw new NotFoundException('Scout not found');
+  return scout;
+}
+
+async getDriverById(driverId: string) {
+  const driver = await this.driverModel.findOne({ driverId }).populate('workshop');
+  if (!driver) throw new NotFoundException('Driver not found');
+  return driver;
+}
+
+// getWorkshopById already exists
+
+// --- UPDATE ---
+async updateScout(scoutId: string, update: Partial<CreateScoutDto>) {
+  const scout = await this.scoutModel.findOneAndUpdate({ scoutId }, update, { new: true });
+  if (!scout) throw new NotFoundException('Scout not found');
+  return scout;
+}
+
+async updateDriver(driverId: string, update: Partial<CreateDriverDto>) {
+  const driver = await this.driverModel.findOneAndUpdate({ driverId }, update, { new: true });
+  if (!driver) throw new NotFoundException('Driver not found');
+  return driver;
+}
+
+async updateWorkshop(workshopId: string, update: Partial<CreateWorkshopDto>) {
+  const workshop = await this.workshopModel.findOneAndUpdate({ workshopId }, update, { new: true });
+  if (!workshop) throw new NotFoundException('Workshop not found');
+  return workshop;
+}
+
+// --- DELETE ---
+async deleteScout(scoutId: string) {
+  const result = await this.scoutModel.findOneAndDelete({ scoutId });
+  if (!result) throw new NotFoundException('Scout not found');
+  return { message: 'Scout deleted successfully' };
+}
+
+async deleteDriver(driverId: string) {
+  const result = await this.driverModel.findOneAndDelete({ driverId });
+  if (!result) throw new NotFoundException('Driver not found');
+  return { message: 'Driver deleted successfully' };
+}
+
+async deleteWorkshop(workshopId: string) {
+  const result = await this.workshopModel.findOneAndDelete({ workshopId });
+  if (!result) throw new NotFoundException('Workshop not found');
+  return { message: 'Workshop deleted successfully' };
 }
 
 }

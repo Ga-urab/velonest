@@ -5,8 +5,6 @@ export class SelfRegisterDriverDto {
   readonly phoneNumber: string;
   readonly vehicle: {
     type: 'bike' | 'taxi';
-    plateNumber: string;
-    model?: string;
-    color?: string;
+
   };
 }

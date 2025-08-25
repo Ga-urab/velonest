@@ -178,8 +178,9 @@ async findAllFromDB(
   startDate?: string,
   endDate?: string,
   stage?: string,
-  partnershipTerm?: string, // NEW param
-  remarksFilter?: 'with' | 'without', // NEW param
+  partnershipTerm?: string,
+  remarksFilter?: 'with' | 'without',
+  remarksContains?: string,   // NEW param
   sortOrder: 'asc' | 'desc' = 'desc',
 ) {
   const skip = (page - 1) * limit;
@@ -200,12 +201,10 @@ async findAllFromDB(
   // 🚨 Restrict "converted" stage for everyone except admin
   if (code !== 'admin') {
     if (query.stage) {
-      // If a stage is already requested, make sure it's not "converted"
       if (query.stage === 'converted') {
         query.stage = { $ne: 'converted' };
       }
     } else {
-      // If no stage filter provided, exclude "converted"
       query.stage = { $ne: 'converted' };
     }
   }
@@ -235,6 +234,19 @@ async findAllFromDB(
     ];
   }
 
+  // 🔥 Remarks contains specific text
+if (remarksContains && remarksContains.trim()) {
+  const text = remarksContains.trim();
+  query.$expr = {
+    $regexMatch: {
+      input: { $arrayElemAt: ['$remarks.text', -1] },
+      regex: text,
+      options: 'i',
+    },
+  };
+}
+
+
   const sortObj: any = { dateAdded: sortOrder === 'asc' ? 1 : -1 };
 
   const [data, total] = await Promise.all([
@@ -249,6 +261,7 @@ async findAllFromDB(
 
   return { data, total };
 }
+
 
 
 
