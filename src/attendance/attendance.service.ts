@@ -20,7 +20,7 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 // Example: allowed office location
-const OFFICE_LOCATION = { lat: 27.700769, lng: 85.300140 };
+const OFFICE_LOCATION = { lat: 27.7108, lng: 85.3251 };
 const MAX_DISTANCE_METERS = 100;
 
 @Injectable()
