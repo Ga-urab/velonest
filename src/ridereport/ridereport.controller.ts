@@ -144,4 +144,51 @@ private parseCSV(file: Express.Multer.File): Promise<string[]> {
 }
 
 
+
+
+
+
+
+
+//Charts
+ @Get('charts/rides-per-driver')
+  async ridesPerDriver() {
+    return this.rideReportService.getRidesPerDriver();
+  }
+
+  @Get('charts/revenue-per-driver')
+  async revenuePerDriver() {
+    return this.rideReportService.getRevenuePerDriver();
+  }
+
+  @Get('charts/rides-per-vehicle')
+  async ridesPerVehicle() {
+    return this.rideReportService.getRidesPerVehicle();
+  }
+
+  @Get('charts/average-fare-per-day')
+async averageFarePerDay() {
+  return this.rideReportService.getAverageFarePerDay();
+}
+
+@Get('leaderboard/drivers/rides')
+async topDriversByRides() {
+  return this.rideReportService.getTopDriversByRides();
+}
+
+@Get('leaderboard/drivers/revenue')
+async topDriversByRevenue() {
+  return this.rideReportService.getTopDriversByRevenue();
+}
+
+@Get('leaderboard/vehicles/rides')
+async topVehiclesByRides() {
+  return this.rideReportService.getTopVehiclesByRides();
+}
+
+@Get('leaderboard/vehicles/revenue')
+async topVehiclesByRevenue() {
+  return this.rideReportService.getTopVehiclesByRevenue();
+}
+
 }

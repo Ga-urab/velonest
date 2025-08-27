@@ -1,4 +1,3 @@
-// schemas/driver.schema.ts
 import { Schema } from 'mongoose';
 
 export const DriverSchema = new Schema({
@@ -8,9 +7,7 @@ export const DriverSchema = new Schema({
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   vehicle: {
     type: { type: String, enum: ['bike', 'taxi'], required: true },
-    plateNumber: { type: String, unique: true, index: true },
-    model: String,
-    color: String,
+    condition: { type: String, enum: ['new', 'old'], required: true },
   },
   createdAt: { type: Date, default: Date.now },
 });

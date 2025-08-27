@@ -61,6 +61,18 @@ async getAllTransactions(
 async getTransactionCount() {
   return this.transactionsService.countTransactions();
 }
+  @Get('charts/revenue-per-driver')
+  async revenuePerDriverByCategory() {
+    return this.transactionsService.getRevenuePerDriverByCategory();
+  }
 
 
+   @Get('charts/driver-revenue')
+  async revenuePerDriver(
+    @Query('page') page = '0',
+    @Query('limit') limit = '5'
+  ) {
+    const skip = parseInt(page) * parseInt(limit);
+    return this.transactionsService.getDriverRevenuePaginated(skip, parseInt(limit));
+  }
 }

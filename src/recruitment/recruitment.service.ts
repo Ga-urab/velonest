@@ -7,6 +7,7 @@ import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import * as QRCode from 'qrcode';
 import { SelfRegisterDriverDto } from './dto/self-register-driver.dto';
+const frontendUrl = process.env.FRONTEND_URL;
 
 @Injectable()
 export class RecruitmentService {
@@ -35,7 +36,7 @@ export class RecruitmentService {
   await workshop.save();
 
   // Generate QR linking to driver registration form
-  const registrationUrl = `https://yourdomain.com/register-driver?workshopId=${workshop.workshopId}`;
+  const registrationUrl = `${frontendUrl}/cutomer?workshopId=${workshop.workshopId}`;
   const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl);
 
   workshop.qrCodeUrl = qrCodeDataUrl;
@@ -75,7 +76,7 @@ export class RecruitmentService {
     return scout.workshops.flatMap((w: any) => w.drivers);
   }
 
-  async selfRegisterDriver(dto: SelfRegisterDriverDto) {
+async selfRegisterDriver(dto: SelfRegisterDriverDto) {
   const workshop = await this.workshopModel.findOne({ workshopId: dto.workshopId });
   if (!workshop) throw new NotFoundException('Workshop not found');
 
@@ -83,8 +84,12 @@ export class RecruitmentService {
     fullName: dto.fullName,
     phoneNumber: dto.phoneNumber,
     workshop: workshop._id,
-    vehicle: dto.vehicle,
+    vehicle: {
+      type: dto.vehicle.type,
+      condition: dto.vehicle.condition,
+    },
   });
+
   await driver.save();
 
   workshop.drivers.push(driver._id);
@@ -92,6 +97,8 @@ export class RecruitmentService {
 
   return driver;
 }
+
+
 // recruitment.service.ts
 async getWorkshopById(workshopId: string) {
   const workshop = await this.workshopModel.findOne({ workshopId });

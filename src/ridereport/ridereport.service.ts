@@ -567,4 +567,197 @@ async getLeaderboardFromCSV(champions: string[], igniters: string[], start: Date
 }
 
 
+
+
+
+
+
+
+
+
+
+//Charts
+  // 1. Rides per driver
+  async getRidesPerDriver() {
+    return this.rideReportModel.aggregate([
+      {
+        $group: {
+          _id: '$driver2',
+          
+          rideCount: { $sum: 1 },
+        },
+      },
+      { $sort: { rideCount: -1 } },
+            { $limit: 10 },
+
+    ]);
+  }
+
+  // 2. Revenue per driver
+  async getRevenuePerDriver() {
+  return this.rideReportModel.aggregate([
+    {
+      $group: {
+        _id: '$driver2',
+        bonus: {
+          $sum: {
+            $add: [
+              { $toDouble: { $ifNull: ['$bonuses', '0'] } },
+              { $toDouble: { $ifNull: ['$promotion', '0'] } },
+            ],
+          },
+        },
+        cash: {
+          $sum: {
+            $add: [
+              { $toDouble: { $ifNull: ['$fareInYangoPro', '0'] } },
+              { $toDouble: { $ifNull: ['$cash', '0'] } },
+              { $toDouble: { $ifNull: ['$card', '0'] } },
+              { $toDouble: { $ifNull: ['$corporatePayment', '0'] } },
+              { $toDouble: { $ifNull: ['$tip', '0'] } },
+            ],
+          },
+        },
+      },
+    },
+    { $sort: { cash: -1, bonus: -1 } },
+    { $limit: 10 },
+  ]);
+}
+
+
+  // 3. Rides per vehicle
+  async getRidesPerVehicle() {
+    return this.rideReportModel.aggregate([
+      {
+        $group: {
+          _id: '$vehicle',
+          rideCount: { $sum: 1 },
+        },
+      },
+      { $sort: { rideCount: -1 } },
+      { $limit: 10 },
+    ]);
+  }
+
+  // Average Fare per Ride (grouped by day)
+async getAverageFarePerDay() {
+  return this.rideReportModel.aggregate([
+    {
+      $addFields: {
+        totalFare: {
+          $add: [
+            { $toDouble: { $ifNull: ['$fareInYangoPro', '0'] } },
+            { $toDouble: { $ifNull: ['$cash', '0'] } },
+            { $toDouble: { $ifNull: ['$card', '0'] } },
+            { $toDouble: { $ifNull: ['$corporatePayment', '0'] } },
+            { $toDouble: { $ifNull: ['$tip', '0'] } },
+            { $toDouble: { $ifNull: ['$bonuses', '0'] } },
+            { $toDouble: { $ifNull: ['$promotion', '0'] } },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$pickupDate' } },
+        averageFare: { $avg: '$totalFare' },
+        rideCount: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } }, 
+          { $limit: 10 },
+
+  ]);
+}
+
+// Top drivers by ride count
+async getTopDriversByRides(limit = 10) {
+  return this.rideReportModel.aggregate([
+    {
+      $group: {
+        _id: '$driver',
+        rideCount: { $sum: 1 },
+      },
+    },
+    { $sort: { rideCount: -1 } },
+    { $limit: limit },
+  ]);
+}
+
+// Top drivers by revenue
+async getTopDriversByRevenue(limit = 10) {
+  return this.rideReportModel.aggregate([
+    {
+      $addFields: {
+        totalFare: {
+          $add: [
+            { $toDouble: { $ifNull: ['$fareInYangoPro', '0'] } },
+            { $toDouble: { $ifNull: ['$cash', '0'] } },
+            { $toDouble: { $ifNull: ['$card', '0'] } },
+            { $toDouble: { $ifNull: ['$corporatePayment', '0'] } },
+            { $toDouble: { $ifNull: ['$tip', '0'] } },
+            { $toDouble: { $ifNull: ['$bonuses', '0'] } },
+            { $toDouble: { $ifNull: ['$promotion', '0'] } },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$driver',
+        totalRevenue: { $sum: '$totalFare' },
+        rideCount: { $sum: 1 },
+      },
+    },
+    { $sort: { totalRevenue: -1 } },
+    { $limit: limit },
+  ]);
+}
+
+// Top vehicles by ride count
+async getTopVehiclesByRides(limit = 10) {
+  return this.rideReportModel.aggregate([
+    {
+      $group: {
+        _id: '$vehicle',
+        rideCount: { $sum: 1 },
+      },
+    },
+    { $sort: { rideCount: -1 } },
+    { $limit: limit },
+  ]);
+}
+
+// Top vehicles by revenue
+async getTopVehiclesByRevenue(limit = 10) {
+  return this.rideReportModel.aggregate([
+    {
+      $addFields: {
+        totalFare: {
+          $add: [
+            { $toDouble: { $ifNull: ['$fareInYangoPro', '0'] } },
+            { $toDouble: { $ifNull: ['$cash', '0'] } },
+            { $toDouble: { $ifNull: ['$card', '0'] } },
+            { $toDouble: { $ifNull: ['$corporatePayment', '0'] } },
+            { $toDouble: { $ifNull: ['$tip', '0'] } },
+            { $toDouble: { $ifNull: ['$bonuses', '0'] } },
+            { $toDouble: { $ifNull: ['$promotion', '0'] } },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$vehicle',
+        totalRevenue: { $sum: '$totalFare' },
+        rideCount: { $sum: 1 },
+      },
+    },
+    { $sort: { totalRevenue: -1 } },
+    { $limit: limit },
+  ]);
+}
+
+
 }

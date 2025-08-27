@@ -178,5 +178,81 @@ async countTransactions(): Promise<{ total: number }> {
   return { total };
 }
 
+ // Top 5 drivers per category
+  async getRevenuePerDriverByCategory() {
+    return this.transactionModel.aggregate([
+      {
+        $group: {
+          _id: { driver: '$driver', categoryId: '$categoryId', category: '$category' },
+          totalRevenue: { $sum: { $toDouble: { $ifNull: ['$amount', '0'] } } },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+      {
+        $group: {
+          _id: '$_id.categoryId',
+          category: { $first: '$_id.category' },
+          topDrivers: {
+            $push: {
+              driver: '$_id.driver',
+              revenue: '$totalRevenue',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          categoryId: '$_id',
+          category: 1,
+          topDrivers: { $slice: ['$topDrivers', 5] }, // top 5 per category
+          _id: 0,
+        },
+      },
+      { $sort: { categoryId: 1 } },
+    ]);
+  }
+
+
+  async getDriverRevenuePaginated(skip = 0, limit = 5) {
+  return this.transactionModel.aggregate([
+    {
+      $group: {
+        _id: '$driver', // group by driver
+        bonus: {
+          $sum: {
+            $cond: [
+              { $in: ['$categoryId', ['bonus', 'promotion_discount']] },
+              { $toDouble: { $ifNull: ['$amount', '0'] } },
+              0
+            ]
+          }
+        },
+        cash: {
+          $sum: {
+            $cond: [
+              { $eq: ['$categoryId', 'cash_collected'] },
+              { $toDouble: { $ifNull: ['$amount', '0'] } },
+              0
+            ]
+          }
+        },
+        partnerFee: {
+          $sum: {
+            $cond: [
+              { $eq: ['$categoryId', 'partner_ride_fee'] },
+              { $toDouble: { $ifNull: ['$amount', '0'] } },
+              0
+            ]
+          }
+        }
+      }
+    },
+    {
+      $sort: { bonus: -1, cash: -1, partnerFee: -1 } // sort by total revenue logic
+    },
+    { $skip: skip },
+    { $limit: limit }
+  ]);
+}
 
 }

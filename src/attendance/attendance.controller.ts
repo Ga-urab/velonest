@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Req } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';  // ✅ Correct import
 
 @ApiTags('Attendance')
 @Controller('attendance')
@@ -9,8 +10,8 @@ export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Post()
-  markAttendance(@Body() dto: CreateAttendanceDto) {
-    return this.attendanceService.markAttendance(dto);
+  markAttendance(@Body() dto: CreateAttendanceDto, @Req() req: Request) {
+    return this.attendanceService.markAttendance(dto, req);
   }
 
   @Get()
