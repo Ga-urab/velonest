@@ -41,7 +41,7 @@ export class RecruitmentService {
   // Generate QR linking to driver registration form
 // Correct registration URL
  const frontendUrl = this.configService.get<string>('FRONTEND_URL'); // ✅ get at runtime
-    const registrationUrl = `${frontendUrl}/customer?workshopId=${workshop.workshopId}`;
+    const registrationUrl = `${frontendUrl}/customer?workshop=${workshop.workshopId}`;
     const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl);
 
 workshop.qrCodeUrl = qrCodeDataUrl;
