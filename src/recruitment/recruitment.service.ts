@@ -2,6 +2,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ConfigService } from '@nestjs/config';
+
 import { CreateScoutDto } from './dto/create-scout.dto';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { CreateDriverDto } from './dto/create-driver.dto';
@@ -15,6 +17,7 @@ export class RecruitmentService {
     @InjectModel('Scout') private scoutModel: Model<any>,
     @InjectModel('Workshop') private workshopModel: Model<any>,
     @InjectModel('Driver') private driverModel: Model<any>,
+  private configService: ConfigService, 
   ) {}
 
   async addScout(dto: CreateScoutDto) {
@@ -36,11 +39,14 @@ export class RecruitmentService {
   await workshop.save();
 
   // Generate QR linking to driver registration form
-  const registrationUrl = `${frontendUrl}/cutomer?workshopId=${workshop.workshopId}`;
-  const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl);
+// Correct registration URL
+ const frontendUrl = this.configService.get<string>('FRONTEND_URL'); // ✅ get at runtime
+    const registrationUrl = `${frontendUrl}/customer?workshopId=${workshop.workshopId}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl);
 
-  workshop.qrCodeUrl = qrCodeDataUrl;
-  await workshop.save();
+workshop.qrCodeUrl = qrCodeDataUrl;
+await workshop.save();
+
 
   scout.workshops.push(workshop._id);
   await scout.save();
